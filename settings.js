@@ -10,7 +10,17 @@ exports.cbusname = "THUIS";
 
 //mqtt server ip:port
 //exports.mqtt = '127.0.0.1:1883';
-exports.mqtt = '10.0.0.5:1883';
+exports.mqtt = {
+  host: '10.0.0.5',
+  port: 8883,
+  tls: true,
+  mtls: true
+};
+
+//if mTLS is going to be used then CA, Client CA & Client Key need to be provided in a file
+exports.mqttcacrt = '/certs/ca.crt'
+exports.mqttclientcrt = '/certs/client.crt'
+exports.mqttclientkey = '/certs/client.key'
 
 //username and password (unncomment to use)
 //exports.mqttusername = 'user1';
@@ -29,7 +39,7 @@ exports.getallonstart = true;
 exports.getallperiod = 60*60;
 
 // Sets MQTT retain flag for values coming from cgate
-// exports.retainreads = true;
+exports.retainreads = true;
 
 exports.messageinterval = 200;
 
