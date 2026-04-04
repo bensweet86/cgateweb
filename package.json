@@ -4,7 +4,7 @@
   "private": true,
   "dependencies": {
     "jshint": "^2.13.6",
-    "mqtt": "^0.3.13",
-    "xml2js": "^0.4.23"
+    "mqtt": "^5.15.1",
+    "xml2js": "^0.6.2"
   }
 }
