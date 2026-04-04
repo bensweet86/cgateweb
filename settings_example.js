@@ -1,6 +1,5 @@
 
 //cbus ip address
-//exports.cbusip = '127.0.0.1';
 exports.cbusip = '10.0.0.5';
 
 
@@ -8,22 +7,21 @@ exports.cbusip = '10.0.0.5';
 //exports.cbusname = "HOME";
 exports.cbusname = "THUIS";
 
-//mqtt server ip:port
-//exports.mqtt = '127.0.0.1:1883';
+//mqtt settings
 exports.mqtt = {
   host: '10.0.0.5',
-  port: 8883,
+  port: 8884,
   tls: true,
   mtls: true
 };
 
 //if mTLS is going to be used then CA, Client CA & Client Key need to be provided in a file
-exports.mqttcacrt = '/certs/ca.crt'
-exports.mqttclientcrt = '/certs/client.crt'
-exports.mqttclientkey = '/certs/client.key'
+exports.mqttcacrt = 'D:/Source/cgateweb/certs/ca.crt'
+exports.mqttclientcrt = 'D:/Source/cgateweb/certs/cgateweb.crt'
+exports.mqttclientkey = 'D:/Source/cgateweb/certs/cgateweb.key'
 
 //username and password (unncomment to use)
-//exports.mqttusername = 'user1';
+//exports.mqttusername = 'username1';
 //exports.mqttpassword = 'password1';
 
 // net and app for automatically requesting values
