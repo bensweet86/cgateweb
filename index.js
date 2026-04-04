@@ -89,8 +89,12 @@ const mqttUrl = `${protocol}://${settings.mqtt.host}:${settings.mqtt.port}`;
 const mqttOptions = {
     port: settings.mqtt.port,
     host: settings.mqtt.host,
+    qos: 0,
+    clientId: 'cgateweb-mqtt',
     keepalive: 60,
-    reconnectPeriod: 5000
+    reconnectPeriod: 5000,
+    connectTimeout: 30000,
+    clean: true,
 };
 
 // Username and password
@@ -99,21 +103,26 @@ if(settings.mqttusername && settings.mqttpassword) {
     mqttOptions.password = settings.mqttpassword;
 }
 
-// tls options
+// TLS options
 if (settings.mqtt.tls) {
+
+    // A CA may have been provided for TLS or mTLS
+    const caExists = fs.existsSync(settings.mqttcacrt);
+    if (caExists) {
+        mqttOptions.ca = fs.readFileSync(settings.mqttcacrt);
+    }
 
     //mTLS options
     if (settings.mqtt.mtls) {
         try {
-            const caExists = fs.existsSync(settings.mqttcacrt);
             const certExists = fs.existsSync(settings.mqttclientcrt);
             const keyExists = fs.existsSync(settings.mqttclientkey);
 
+            //CA, client cert and client key are mandatory for mTLS
             if (!caExists || !certExists || !keyExists) {
                 throw new Error(`MQTT TLS files missing: CA: ${caExists}, CERT: ${certExists}, KEY: ${keyExists}`);
             }
 
-            mqttOptions.ca = fs.readFileSync(settings.mqttcacrt);
             mqttOptions.cert = fs.readFileSync(settings.mqttclientcrt);
             mqttOptions.key = fs.readFileSync(settings.mqttclientkey);
             mqttOptions.rejectUnauthorized = true;
@@ -122,7 +131,10 @@ if (settings.mqtt.tls) {
 
             mqttOptions.checkServerIdentity = (host, cert) => {
                 const san = cert.subjectaltname || '';
-                if (!/DNS:.*\b${host}\b/.test(san) && cert.subject.CN !== host) {
+                
+                const regex = new RegExp(`DNS:.*\\b${host}\\b`);
+
+                if (!regex.test(san) && cert.subject.CN !== host) {
                     throw new Error('MQTT broker certificate mismatch!');
                 }
             };
@@ -136,15 +148,11 @@ if (settings.mqtt.tls) {
 
     // Enforce TLS versions
     mqttOptions.minVersion = 'TLSv1.2';
-    mqttOptions.secureProtocol = 'TLS_method';
 }
 
-const options = { 
-    qos: 0
-};
-
+const options = {};
 if(settings.retainreads === true) {
-        options.retain = true;
+    options.retain = true;
 }
 
 // Create an MQTT client connection
@@ -336,7 +344,7 @@ function started(){
 
 client.on('disconnect', () => {
     clientConnected = false;
-    console.log(`DISCONNECT FROM MQTT: ${settings.mqtt}`);
+    console.log(`DISCONNECT FROM MQTT: ${JSON.stringify(settings.mqtt)}`);
 });
 
 client.on('error', (err) => {
@@ -346,20 +354,27 @@ client.on('error', (err) => {
 
 client.on('offline', () => {
     clientConnected = false;
-    console.log(`MQTT OFFLINE: ${settings.mqtt}`);
+    console.log(`MQTT OFFLINE: ${JSON.stringify(settings.mqtt)}`);
 });
 
 client.on('reconnect', () => {
     clientConnected = false;
-    console.log(`MQTT RECONNECTING: ${settings.mqtt}`);
+    console.log(`MQTT RECONNECTING: ${JSON.stringify(settings.mqtt)}`);
 });
 
-client.on('connect', () => {
+client.on('connect', (connack) => {
+    console.log(`MQTT CONNECTED: ${JSON.stringify(settings.mqtt)}`, JSON.stringify(connack, null, 2));
     clientConnected = true;
-    console.log(`CONNECTED TO MQTT: ${settings.mqtt}`);
-    started();
 
-    client.subscribe('cbus/write/#');
+    client.subscribe('cbus/write/#', (err, granted) => {
+        if (err) {
+            console.error('MQTT Subscribe failed', err);
+            return;
+        }
+        console.log('MQTT Subscription successful', granted);
+        started();
+    });
+
 });
 
 client.on('message', async (topic, message) => {
