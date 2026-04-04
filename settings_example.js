@@ -24,15 +24,12 @@ exports.mqttclientkey = '/certs/cgateweb.key'
 //exports.mqttpassword = 'password1';
 
 // net and app for automatically requesting values
-// exports.getallnetapp = '254/56';
 exports.getallnetapp = '254/56';
 
 // whether to request on start (requires getallnetapp set as well)
-// exports.getallonstart = true;
 exports.getallonstart = true;
 
 // how often to request after start (in seconds), (requires getallnetapp set as well)
-// exports.getallperiod = 60*60;
 exports.getallperiod = 60*60;
 
 // Sets MQTT retain flag for values coming from cgate
