@@ -90,7 +90,7 @@ const mqttOptions = {
     port: settings.mqtt.port,
     host: settings.mqtt.host,
     qos: 0,
-    clientId: 'cgateweb-mqtt',
+    clientId: settings.mqtt.clientid,
     keepalive: 60,
     reconnectPeriod: 5000,
     connectTimeout: 30000,
@@ -209,6 +209,7 @@ const CBusEvent = function(data){
     const parts2 = parts1[0].toString().split("-");
     let address = [];
     let level = null;
+    let source = null;
 
     //Example: 300-//THUIS/254/56/3: level=0
     if(parts2.length > 1) {
@@ -225,6 +226,7 @@ const CBusEvent = function(data){
         this.DeviceType = () => null;
         this.Action = () => null;
         this.Response = () => parts2[0].toString();
+        this.SourceUnit = () => null;
 
     } else {
         //Example: "lighting on //THUIS/254/56/27    #sourceunit=201 OID=adccf7c0-b076-103c-8603-b219963e4d06 sessionId=cmd21 commandId={none}"
@@ -239,6 +241,16 @@ const CBusEvent = function(data){
         } else if (parts1.length > 2) {
             address = parts1[2].split("/");
             level = parts1[3];
+            const parts3 = data.toString().split("#");
+
+            if (parts3.length > 1) {
+                const parts4 = parts3[1].split(" ");
+
+                if (parts4.length > 1) {
+                    const parts5 = parts4[0].split("=");
+                    source = parts4[0].split("=")[1];
+                }
+            }
 
         } else {
             level = null;
@@ -247,6 +259,7 @@ const CBusEvent = function(data){
         this.DeviceType = () => parts1[0] || null;
         this.Action = () => parts1[1] || null;
         this.Response = () => parts1[0].toString();
+        this.SourceUnit = () => source || null;
     }
 
     this.Host = function() { return address[3]?.toString() || null; };
@@ -536,14 +549,34 @@ command.on('data',function(data) {
                 if (action.Level() == 0) {
                     if (logging) console.log(`C-Bus status received: ${address} OFF`);
                     if (logging) console.log(`C-Bus status received: ${address} 0%`);
-                    queue.publish(`cbus/read/${address}/state`, `OFF`, options, function() {});
-                    queue.publish(`cbus/read/${address}/level`, `0`, options, function() {});
+
+                    const payload = {
+                        state: "OFF",
+                        level: 0,
+                        ...(action.SourceUnit() != null && {
+                            sourceUnit: action.SourceUnit()
+                        })
+                    };
+
+                    queue.publish(`cbus/read/${address}`, JSON.stringify(payload), options, function() {});
+                    //queue.publish(`cbus/read/${address}/state`, `OFF`, options, function() {});
+                    //queue.publish(`cbus/read/${address}/level`, `0`, options, function() {});
                     eventEmitter.emit('level', address, 0);
                 } else {
                     if (logging) console.log(`C-Bus status received: ${address} ON`);
                     if (logging) console.log(`C-Bus status received: ${address} ${action.Level()}%`);
-                    queue.publish(`cbus/read/${address}/state`, `ON`, options, function() {});
-                    queue.publish(`cbus/read/${address}/level`, action.Level(), options, function() {});
+
+                    const payload = {
+                        state: "ON",
+                        level: action.Level(),
+                        ...(action.SourceUnit() != null && {
+                            sourceUnit: action.SourceUnit()
+                        })
+                    };
+
+                    queue.publish(`cbus/read/${address}`, JSON.stringify(payload), options, function() {});
+                    //queue.publish(`cbus/read/${address}/state`, `ON`, options, function() {});
+                    //queue.publish(`cbus/read/${address}/level`, action.Level(), options, function() {});
                     eventEmitter.emit('level', address, action.Level());
                 }
             } else if(action.Response() == "347"){
@@ -574,6 +607,7 @@ event.on('data', function(data) {
                 if (logging) console.log(`Event line: ${line}`);
                 let parts = line.split(" ");
                 let action = new CBusEvent(line);
+                let payload;
                 const address = buildDeviceAddress(action);
 
                 if(action.DeviceType() == "lighting") {
@@ -582,26 +616,66 @@ event.on('data', function(data) {
                         case "on":
                             if (logging) console.log(`C-Bus status received: ${address} ON`);
                             if (logging) console.log(`C-Bus status received: ${address} 100%`);
-                            queue.publish(`cbus/read/${address}/state`, `ON`, options, function() {});
-                            queue.publish(`cbus/read/${address}/level`, `100`, options, function() {});
+
+                            payload = {
+                                state: "ON",
+                                level: 100,
+                                ...(action.SourceUnit() != null && {
+                                    sourceUnit: action.SourceUnit()
+                                })
+                            };
+                            
+                            queue.publish(`cbus/read/${address}`, JSON.stringify(payload), options, function() {});
+                            //queue.publish(`cbus/read/${address}/state`, `ON`, options, function() {});
+                            //queue.publish(`cbus/read/${address}/level`, `100`, options, function() {});
                             break;
                         case "off":
                             if (logging) console.log(`C-Bus status received: ${address} OFF`);
                             if (logging) console.log(`C-Bus status received: ${address} 0%`);
-                            queue.publish(`cbus/read/${address}/state`, `OFF`, options, function() {});
-                            queue.publish(`cbus/read/${address}/level`, `0`, options, function() {});
+
+                            payload = {
+                                state: "OFF",
+                                level: 0,
+                                ...(action.SourceUnit() != null && {
+                                    sourceUnit: action.SourceUnit()
+                                })
+                            };
+                            
+                            queue.publish(`cbus/read/${address}`, JSON.stringify(payload), options, function() {});
+                            //queue.publish(`cbus/read/${address}/state`, `OFF`, options, function() {});
+                            //queue.publish(`cbus/read/${address}/level`, `0`, options, function() {});
                             break;
                         case "ramp":
                             if(parseInt(parts[3]) > 0) {
                                 if (logging) console.log(`C-Bus status received: ${address} ON`);
                                 if (logging) console.log(`C-Bus status received: ${address} ${action.Level().toString()}%`);
-                                queue.publish(`cbus/read/${address}/state`, `ON`, options, function() {});
-                                queue.publish(`cbus/read/${address}/level`, action.Level().toString(), options, function() {});
+
+                                payload = {
+                                    state: "ON",
+                                    level: action.Level().toString(),
+                                    ...(action.SourceUnit() != null && {
+                                        sourceUnit: action.SourceUnit()
+                                    })
+                                };
+                                
+                                queue.publish(`cbus/read/${address}`, JSON.stringify(payload), options, function() {});
+                                //queue.publish(`cbus/read/${address}/state`, `ON`, options, function() {});
+                                //queue.publish(`cbus/read/${address}/level`, action.Level().toString(), options, function() {});
                             } else {
                                 if (logging) console.log(`C-Bus status received: ${address} OFF`);
                                 if (logging) console.log(`C-Bus status received: ${address} 0%`);
-                                queue.publish(`cbus/read/${address}/state`, `OFF`, options, function() {});
-                                queue.publish(`cbus/read/${address}/level`, `0`, options, function() {});
+
+                                payload = {
+                                    state: "OFF",
+                                    level: 0,
+                                    ...(action.SourceUnit() != null && {
+                                        sourceUnit: action.SourceUnit()
+                                    })
+                                };
+
+                                queue.publish(`cbus/read/${address}`, JSON.stringify(payload), options, function() {});
+                                //queue.publish(`cbus/read/${address}/state`, `OFF`, options, function() {});
+                                //queue.publish(`cbus/read/${address}/level`, `0`, options, function() {});
                             }
                             break;
                         default:

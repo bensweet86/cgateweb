@@ -11,7 +11,8 @@ exports.mqtt = {
   host: '127.0.0.1',
   port: 8884,
   tls: true,
-  mtls: true
+  mtls: true,
+  clientid: 'cgateweb-mqtt'
 };
 
 //if mTLS is going to be used then CA, Client CA & Client Key need to be provided in a file
