@@ -559,8 +559,8 @@ command.on('data',function(data) {
                     };
 
                     queue.publish(`cbus/read/${address}`, JSON.stringify(payload), options, function() {});
-                    //queue.publish(`cbus/read/${address}/state`, `OFF`, options, function() {});
-                    //queue.publish(`cbus/read/${address}/level`, `0`, options, function() {});
+                    queue.publish(`cbus/read/${address}/state`, `OFF`, options, function() {});
+                    queue.publish(`cbus/read/${address}/level`, `0`, options, function() {});
                     eventEmitter.emit('level', address, 0);
                 } else {
                     if (logging) console.log(`C-Bus status received: ${address} ON`);
@@ -575,8 +575,8 @@ command.on('data',function(data) {
                     };
 
                     queue.publish(`cbus/read/${address}`, JSON.stringify(payload), options, function() {});
-                    //queue.publish(`cbus/read/${address}/state`, `ON`, options, function() {});
-                    //queue.publish(`cbus/read/${address}/level`, action.Level(), options, function() {});
+                    queue.publish(`cbus/read/${address}/state`, `ON`, options, function() {});
+                    queue.publish(`cbus/read/${address}/level`, action.Level(), options, function() {});
                     eventEmitter.emit('level', address, action.Level());
                 }
             } else if(action.Response() == "347"){
@@ -626,8 +626,8 @@ event.on('data', function(data) {
                             };
                             
                             queue.publish(`cbus/read/${address}`, JSON.stringify(payload), options, function() {});
-                            //queue.publish(`cbus/read/${address}/state`, `ON`, options, function() {});
-                            //queue.publish(`cbus/read/${address}/level`, `100`, options, function() {});
+                            queue.publish(`cbus/read/${address}/state`, `ON`, options, function() {});
+                            queue.publish(`cbus/read/${address}/level`, `100`, options, function() {});
                             break;
                         case "off":
                             if (logging) console.log(`C-Bus status received: ${address} OFF`);
@@ -642,8 +642,8 @@ event.on('data', function(data) {
                             };
                             
                             queue.publish(`cbus/read/${address}`, JSON.stringify(payload), options, function() {});
-                            //queue.publish(`cbus/read/${address}/state`, `OFF`, options, function() {});
-                            //queue.publish(`cbus/read/${address}/level`, `0`, options, function() {});
+                            queue.publish(`cbus/read/${address}/state`, `OFF`, options, function() {});
+                            queue.publish(`cbus/read/${address}/level`, `0`, options, function() {});
                             break;
                         case "ramp":
                             if(parseInt(parts[3]) > 0) {
@@ -659,8 +659,8 @@ event.on('data', function(data) {
                                 };
                                 
                                 queue.publish(`cbus/read/${address}`, JSON.stringify(payload), options, function() {});
-                                //queue.publish(`cbus/read/${address}/state`, `ON`, options, function() {});
-                                //queue.publish(`cbus/read/${address}/level`, action.Level().toString(), options, function() {});
+                                queue.publish(`cbus/read/${address}/state`, `ON`, options, function() {});
+                                queue.publish(`cbus/read/${address}/level`, action.Level().toString(), options, function() {});
                             } else {
                                 if (logging) console.log(`C-Bus status received: ${address} OFF`);
                                 if (logging) console.log(`C-Bus status received: ${address} 0%`);
@@ -674,8 +674,8 @@ event.on('data', function(data) {
                                 };
 
                                 queue.publish(`cbus/read/${address}`, JSON.stringify(payload), options, function() {});
-                                //queue.publish(`cbus/read/${address}/state`, `OFF`, options, function() {});
-                                //queue.publish(`cbus/read/${address}/level`, `0`, options, function() {});
+                                queue.publish(`cbus/read/${address}/state`, `OFF`, options, function() {});
+                                queue.publish(`cbus/read/${address}/level`, `0`, options, function() {});
                             }
                             break;
                         default:
